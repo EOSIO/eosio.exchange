@@ -8,7 +8,7 @@ if [[ "${unamestr}" == 'Darwin' ]]; then
    BOOST=/usr/local/include
 else
    PREFIX=~/opt
-   BOOST=~/opt/boost_1_67_0/include
+   BOOST=~/opt/boost/include
 fi
 
 mkdir -p bin/${CONTRACT_NAME}
@@ -18,12 +18,23 @@ LINK="${PREFIX}/wasm/bin/llvm-link -only-needed "
 LLC="${PREFIX}/wasm/bin/llc -thread-model=single --asm-verbose=false"
 S2W="/usr/local/bin/eosio-s2wasm "
 W2W="/usr/local/bin/eosio-wast2wasm "
-${EOSCLANG}  -Iinclude -c -emit-llvm -O3 --std=c++14 --target=wasm32 -nostdinc -DBOOST_DISABLE_ASSERTS -DBOOST_EXCEPTION_DISABLE -nostdlib -nostdlibinc -ffreestanding -nostdlib -fno-threadsafe-statics -fno-rtti -fno-exceptions -o ${CONTRACT_NAME}.bc src/${CONTRACT_NAME}.cpp
-${LINK} -o linked.bc ${CONTRACT_NAME}.bc /usr/local/usr/share/eosio/contractsdk/lib/eosiolib.bc /usr/local/usr/share/eosio/contractsdk/lib/libc++.bc /usr/local/usr/share/eosio/contractsdk/lib/libc.bc
-${LLC} -o ${CONTRACT_NAME}.s linked.bc
-${S2W} -o ${CONTRACT_NAME}.wast -s 16384 ${CONTRACT_NAME}.s
-${W2W} ${CONTRACT_NAME}.wast bin/${CONTRACT_NAME}/${CONTRACT_NAME}.wasm -n
-cp abi/${CONTRACT_NAME}.abi bin/${CONTRACT_NAME}/${CONTRACT_NAME}.abi
+
+deps=()
+exit 0
+### Currently fails to build
+#${EOSCLANG}  -Iinclude -c -emit-llvm -O3 --std=c++14 --target=wasm32 -nostdinc -DBOOST_DISABLE_ASSERTS -DBOOST_EXCEPTION_DISABLE -nostdlib -nostdlibinc -ffreestanding -nostdlib -fno-threadsafe-statics -fno-rtti -fno-exceptions -o ${CONTRACT_NAME}.bc src/${CONTRACT_NAME}.cpp
+#${LINK} -o linked.bc ${CONTRACT_NAME}.bc /usr/local/usr/share/eosio/contractsdk/lib/eosiolib.bc /usr/local/usr/share/eosio/contractsdk/lib/libc++.bc /usr/local/usr/share/eosio/contractsdk/lib/libc.bc
+#${LLC} -o ${CONTRACT_NAME}.s linked.bc
+#${S2W} -o ${CONTRACT_NAME}.wast -s 16384 ${CONTRACT_NAME}.s
+#${W2W} ${CONTRACT_NAME}.wast bin/${CONTRACT_NAME}/${CONTRACT_NAME}.wasm -n
+#cp abi/${CONTRACT_NAME}.abi bin/${CONTRACT_NAME}/${CONTRACT_NAME}.abi
+
+for dep in "${deps[@]}"; do
+   echo ${dep}
+   pushd ./deps/${dep} &> /dev/null
+   ./build.sh $1
+   popd &> /dev/null
+done
 
 if [[ "$1" == 'noinstall' ]]; then
    rm ${CONTRACT_NAME}.bc linked.bc ${CONTRACT_NAME}.wast ${CONTRACT_NAME}.s
